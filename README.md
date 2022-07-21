@@ -1,19 +1,8 @@
-# Triadica Workflow
+# Play Quaternion Fractal
 
-- Demo https://r.tiye.me/Triadica/triadica-workflow/
+- Demo https://r.tiye.me/Triadica/play-quaternion-fractal/
 
-### Usages
-
-Depends on Node.js and [Calcit](http://calcit-lang.org/), to develop:
-
-```bash
-yarn
-# also launcher @calcit/editor for Cirru editing
-cr --emit-js --watch-dir shaders/ # watcher
-yarn vite # watcher
-```
-
-shader files in [`shaders/`](shaders/).
+based on previous work on https://github.com/Quatrefoil-GL/play-ruled-surface .
 
 ### Workflow
 

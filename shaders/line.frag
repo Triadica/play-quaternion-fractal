@@ -5,5 +5,6 @@ varying float v_s;
 varying vec3 original_position;
 
 void main() {
-  gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0);
+  float l = 0.6;
+  gl_FragColor = vec4(l, l, l, 1.0);
 }
