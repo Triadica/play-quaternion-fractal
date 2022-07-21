@@ -10,16 +10,25 @@
           defn comp-container (store)
             let
                 points $ :points store
-                level 8
+                level 5
                 mini-seg 4
               group ({})
                 group ({}) & $ -> points
                   map-indexed $ fn (idx point)
-                    comp-drag-point
-                      {} $ :position point
-                      fn (p d!)
-                        if (> idx 0)
-                          d! :move-point $ [] idx p
+                    group ({})
+                      comp-drag-point
+                        {} $ :position (take point 3)
+                        fn (p d!)
+                          if (> idx 0)
+                            d! :move-point $ [] idx
+                              conj p $ last point
+                      comp-slider
+                        {} $ :position
+                          &v+ point $ [] 40 20 0
+                        fn (xy d!)
+                          d! :move-point $ [] idx
+                            update point 3 $ fn (w)
+                              + w $ * 1 (first xy)
                 case-default (count points)
                   do (js/console.log "\"unknown points:" points) nil
                   4 $ let
@@ -60,7 +69,7 @@
           triadica.alias :refer $ object group
           triadica.math :refer $ &v+
           triadica.core :refer $ %nested-attribute
-          triadica.comp.drag-point :refer $ comp-drag-point
+          triadica.comp.drag-point :refer $ comp-drag-point comp-slider
           app.fractal :refer $ fold-line2 fold-line3 fold-line4 fold-line5
           app.math :refer $ q-inverse
     |app.config $ {}
@@ -175,7 +184,7 @@
         |*store $ quote
           defatom *store $ {}
             :states $ {}
-            :points $ [] ([] 0 0 0) ([] 40 100 0) ([] 40 200 0) ([] 0 300 40) ([] 0 400 40) ([] 0 500 0)
+            :points $ [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
         |canvas $ quote
           def canvas $ js/document.querySelector "\"canvas"
         |dispatch! $ quote
