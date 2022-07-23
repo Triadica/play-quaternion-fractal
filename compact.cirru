@@ -1,7 +1,7 @@
 
 {} (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/
+    :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/ |memof/
   :entries $ {}
   :files $ {}
     |app.comp.container $ {}
@@ -10,29 +10,39 @@
           defn comp-container (store)
             let
                 points $ :points store
-                level 5
+                level $ :level store
+                controls? $ :controls? store
                 mini-seg 4
               map-indexed points $ fn (idx p)
                 hud-display (str "\"p" idx) (map p shorten-num)
-              group ({}) (comp-axis)
-                group ({}) & $ -> points
-                  map-indexed $ fn (idx point)
-                    group ({})
-                      comp-drag-point
-                        {} (:size 16)
-                          :position $ take point 3
-                        fn (p d!)
-                          if (> idx 0)
+              group ({})
+                if controls? $ memof1-call comp-axis
+                if controls? $ memof1-call comp-controls
+                memof1-call comp-button
+                  {} (:size 8)
+                    :position $ [] 400 100 0
+                    :color $ [] 0.4 0.8 0.5
+                  fn (e d!) (d! :toggle-controls nil)
+                if controls? $ group ({}) &
+                  -> points
+                    map-indexed $ fn (idx point)
+                      group ({})
+                        comp-drag-point
+                          {} (:size 16)
+                            :position $ take point 3
+                          fn (p d!)
+                            if (> idx 0)
+                              d! :move-point $ [] idx
+                                conj p $ last point
+                        comp-slider
+                          {} (:size 10)
+                            :position $ &v+ point ([] 24 16 0)
+                            :color $ [] 0.3 0.8 0.3
+                          fn (xy d!)
                             d! :move-point $ [] idx
-                              conj p $ last point
-                      comp-slider
-                        {} (:size 10)
-                          :position $ &v+ point ([] 24 16 0)
-                          :color $ [] 0.3 0.8 0.3
-                        fn (xy d!)
-                          d! :move-point $ [] idx
-                            update point 3 $ fn (w)
-                              + w $ * 1 (first xy)
+                              update point 3 $ fn (w)
+                                + w $ * 1 (first xy)
+                    rest
                 case-default (count points)
                   do (js/console.log "\"unknown points:" points) nil
                   4 $ let
@@ -67,6 +77,26 @@
                       :vertex-shader $ inline-shader "\"line.vert"
                       :fragment-shader $ inline-shader "\"line.frag"
                       :grouped-attributes ps
+        |comp-controls $ quote
+          defn comp-controls () $ group ({})
+            comp-button
+              {} (:size 12)
+                :position $ [] 300 200 0
+              fn (e d!) (d! :add-point nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 300 160 0
+              fn (e d!) (d! :remove-point nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 340 180 0
+                :color $ [] 0.4 0.8 0.5
+              fn (e d!) (d! :inc-level nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 340 140 0
+                :color $ [] 0.4 0.8 0.5
+              fn (e d!) (d! :dec-level nil)
         |shorten-num $ quote
           defn shorten-num (x)
             js/parseFloat $ .!toFixed x 1
@@ -77,10 +107,11 @@
           triadica.math :refer $ &v+
           triadica.core :refer $ %nested-attribute
           triadica.comp.axis :refer $ comp-axis
-          triadica.comp.drag-point :refer $ comp-drag-point comp-slider
+          triadica.comp.drag-point :refer $ comp-drag-point comp-slider comp-button
           app.fractal :refer $ fold-line2 fold-line3 fold-line4 fold-line5
           quaternion.core :refer $ q-inverse
           triadica.hud :refer $ hud-display
+          memof.once :refer $ memof1-call
     |app.config $ {}
       :defs $ {}
         |inline-shader $ quote
@@ -194,6 +225,8 @@
           defatom *store $ {}
             :states $ {}
             :points $ [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
+            :level 4
+            :controls? true
         |canvas $ quote
           def canvas $ js/document.querySelector "\"canvas"
         |dispatch! $ quote
@@ -204,11 +237,12 @@
                 next $ case-default op
                   do (js/console.warn "\"unknown op" op) store
                   :add-point $ update store :points
-                    fn (xs) (conj xs data)
+                    fn (xs)
+                      conj xs $ &v+ (last xs) ([] 0 100 0 0)
                   :remove-point $ update store :points
                     fn (xs)
                       if
-                        <= (count xs) 4
+                        <= (count xs) 1
                         , xs $ butlast xs
                   :move-point $ update store :points
                     fn (xs)
@@ -216,6 +250,13 @@
                           idx $ nth data 0
                           p $ nth data 1
                         assoc xs idx p
+                  :inc-level $ update store :level
+                    fn (l)
+                      if (< l 9) (inc l) l
+                  :dec-level $ update store :level
+                    fn (l)
+                      if (> l 3) (- l 2) l
+                  :toggle-controls $ update store :controls? not
               reset! *store next
         |main! $ quote
           defn main! ()
@@ -254,3 +295,4 @@
           triadica.global :refer $ *gl-context
           triadica.hud :refer $ inject-hud!
           app.comp.container :refer $ comp-container
+          quaternion.core :refer $ &v+
