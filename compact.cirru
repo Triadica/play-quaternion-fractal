@@ -1,7 +1,7 @@
 
 {} (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/
+    :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/ |memof/
   :entries $ {}
   :files $ {}
     |app.comp.container $ {}
@@ -10,25 +10,39 @@
           defn comp-container (store)
             let
                 points $ :points store
-                level 5
+                level $ :level store
+                controls? $ :controls? store
                 mini-seg 4
+              map-indexed points $ fn (idx p)
+                hud-display (str "\"p" idx) (map p shorten-num)
               group ({})
-                group ({}) & $ -> points
-                  map-indexed $ fn (idx point)
-                    group ({})
-                      comp-drag-point
-                        {} $ :position (take point 3)
-                        fn (p d!)
-                          if (> idx 0)
+                if controls? $ memof1-call comp-axis
+                if controls? $ memof1-call comp-controls
+                memof1-call comp-button
+                  {} (:size 8)
+                    :position $ [] 400 100 0
+                    :color $ [] 0.4 0.8 0.5
+                  fn (e d!) (d! :toggle-controls nil)
+                if controls? $ group ({}) &
+                  -> points
+                    map-indexed $ fn (idx point)
+                      group ({})
+                        comp-drag-point
+                          {} (:size 16)
+                            :position $ take point 3
+                          fn (p d!)
+                            if (> idx 0)
+                              d! :move-point $ [] idx
+                                conj p $ last point
+                        comp-slider
+                          {} (:size 10)
+                            :position $ &v+ point ([] 24 16 0)
+                            :color $ [] 0.3 0.8 0.3
+                          fn (xy d!)
                             d! :move-point $ [] idx
-                              conj p $ last point
-                      comp-slider
-                        {} $ :position
-                          &v+ point $ [] 40 20 0
-                        fn (xy d!)
-                          d! :move-point $ [] idx
-                            update point 3 $ fn (w)
-                              + w $ * 1 (first xy)
+                              update point 3 $ fn (w)
+                                + w $ * 1 (first xy)
+                    rest
                 case-default (count points)
                   do (js/console.log "\"unknown points:" points) nil
                   4 $ let
@@ -63,15 +77,41 @@
                       :vertex-shader $ inline-shader "\"line.vert"
                       :fragment-shader $ inline-shader "\"line.frag"
                       :grouped-attributes ps
+        |comp-controls $ quote
+          defn comp-controls () $ group ({})
+            comp-button
+              {} (:size 12)
+                :position $ [] 300 200 0
+              fn (e d!) (d! :add-point nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 300 160 0
+              fn (e d!) (d! :remove-point nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 340 180 0
+                :color $ [] 0.4 0.8 0.5
+              fn (e d!) (d! :inc-level nil)
+            comp-button
+              {} (:size 12)
+                :position $ [] 340 140 0
+                :color $ [] 0.4 0.8 0.5
+              fn (e d!) (d! :dec-level nil)
+        |shorten-num $ quote
+          defn shorten-num (x)
+            js/parseFloat $ .!toFixed x 1
       :ns $ quote
         ns app.comp.container $ :require ("\"twgl.js" :as twgl)
           app.config :refer $ inline-shader
           triadica.alias :refer $ object group
           triadica.math :refer $ &v+
           triadica.core :refer $ %nested-attribute
-          triadica.comp.drag-point :refer $ comp-drag-point comp-slider
+          triadica.comp.axis :refer $ comp-axis
+          triadica.comp.drag-point :refer $ comp-drag-point comp-slider comp-button
           app.fractal :refer $ fold-line2 fold-line3 fold-line4 fold-line5
-          app.math :refer $ q-inverse
+          quaternion.core :refer $ q-inverse
+          triadica.hud :refer $ hud-display
+          memof.once :refer $ memof1-call
     |app.config $ {}
       :defs $ {}
         |inline-shader $ quote
@@ -178,13 +218,15 @@
             {} $ :position (take v4 3)
       :ns $ quote
         ns app.fractal $ :require
-          app.math :refer $ v-scale v+ &v+ &q+ &q- &q* q-inverse q-length2
+          quaternion.core :refer $ v-scale v+ &v+ &q+ &q- &q* q-inverse q-length2
     |app.main $ {}
       :defs $ {}
         |*store $ quote
           defatom *store $ {}
             :states $ {}
             :points $ [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
+            :level 4
+            :controls? true
         |canvas $ quote
           def canvas $ js/document.querySelector "\"canvas"
         |dispatch! $ quote
@@ -195,11 +237,12 @@
                 next $ case-default op
                   do (js/console.warn "\"unknown op" op) store
                   :add-point $ update store :points
-                    fn (xs) (conj xs data)
+                    fn (xs)
+                      conj xs $ &v+ (last xs) ([] 0 100 0 0)
                   :remove-point $ update store :points
                     fn (xs)
                       if
-                        <= (count xs) 4
+                        <= (count xs) 1
                         , xs $ butlast xs
                   :move-point $ update store :points
                     fn (xs)
@@ -207,12 +250,19 @@
                           idx $ nth data 0
                           p $ nth data 1
                         assoc xs idx p
+                  :inc-level $ update store :level
+                    fn (l)
+                      if (< l 9) (inc l) l
+                  :dec-level $ update store :level
+                    fn (l)
+                      if (> l 3) (- l 2) l
+                  :toggle-controls $ update store :controls? not
               reset! *store next
         |main! $ quote
           defn main! ()
             if dev? $ load-console-formatter!
             twgl/setDefaults $ js-object (:attribPrefix "\"a_")
-            ; inject-hud!
+            inject-hud!
             reset-canvas-size! canvas
             reset! *gl-context $ .!getContext canvas "\"webgl"
               js-object $ :antialias true
@@ -243,107 +293,6 @@
           touch-control.core :refer $ render-control! start-control-loop! replace-control-loop!
           triadica.core :refer $ on-control-event load-objects! paint-canvas! setup-mouse-events! reset-canvas-size!
           triadica.global :refer $ *gl-context
+          triadica.hud :refer $ inject-hud!
           app.comp.container :refer $ comp-container
-    |app.math $ {}
-      :defs $ {}
-        |&c* $ quote
-          defn &c* (a b)
-            let-sugar
-                  [] x0 y0
-                  , a
-                ([] x1 y1) b
-              []
-                - (* x0 x1) (* y0 y1)
-                + (* x0 y1) (* x1 y0)
-        |&c+ $ quote
-          defn &c+ (a b)
-            let-sugar
-                  [] x0 y0
-                  , a
-                ([] x1 y1) b
-              [] (+ x0 x1) (+ y0 y1)
-        |&c- $ quote
-          defn &c- (a b)
-            let-sugar
-                  [] x0 y0
-                  , a
-                ([] x1 y1) b
-              [] (- x0 x1) (- y0 y1)
-        |&q* $ quote
-          defn &q* (a b)
-            &let
-              v $ .!multiply
-                new THREE/Quaternion (nth a 0) (nth a 1) (nth a 2) (nth a 3)
-                new THREE/Quaternion (nth b 0) (nth b 1) (nth b 2) (nth b 3)
-              [] (.-x v) (.-y v) (.-z v) (.-w v)
-        |&q+ $ quote
-          defn &q+ (a b)
-            let-sugar
-                  [] x y z w
-                  , a
-                ([] x1 y1 z1 w1) b
-              [] (+ x x1) (+ y y1) (+ z z1) (+ w w1)
-        |&q- $ quote
-          defn &q- (a b)
-            let-sugar
-                  [] x y z w
-                  , a
-                ([] x1 y1 z1 w1) b
-              [] (- x x1) (- y y1) (- z z1) (- w w1)
-        |&v+ $ quote
-          defn &v+ (a b)
-            let[] (x y z) a $ let[] (x2 y2 z2) b
-              [] (&+ x x2) (&+ y y2) (&+ z z2)
-        |&v- $ quote
-          defn &v- (a b)
-            let[] (x y z) a $ let[] (x2 y2 z2) b
-              [] (&- x x2) (&- y y2) (&- z z2)
-        |c-conjutate $ quote
-          defn c-conjutate (a)
-            let[] (x y) a $ [] (&- 0 x) w
-        |c-length $ quote
-          defn c-length (v)
-            let[] (x y) v $ js/Math.sqrt
-              + (js/Math.pow x 2) (js/Math.pow y 2)
-        |c-length2 $ quote
-          defn c-length2 (v)
-            let[] (x y) v $ + (js/Math.pow x 2) (js/Math.pow y 2)
-        |q+ $ quote
-          defn q+ (& xs)
-            foldl xs ([] 0 0 0 0)
-              fn (acc x) (&q+ acc x)
-        |q- $ quote
-          defn q- (& xs)
-            foldl (rest xs) (first xs)
-              fn (acc x) (&q- acc x)
-        |q-conjugate $ quote
-          defn q-conjugate (a)
-            let[] (x y z w) a $ [] (&- 0 x) (&- 0 y) (&- 0 z) w
-        |q-inverse $ quote
-          defn q-inverse (a)
-            q-scale (q-conjugate a)
-              &/ 1 $ q-length2 a
-        |q-length $ quote
-          defn q-length (a)
-            let[] (x y z w) a $ sqrt
-              + (pow x 2) (pow y 2) (pow z 2) (pow w 2)
-        |q-length2 $ quote
-          defn q-length2 (a)
-            let[] (x y z w) a $ + (pow x 2) (pow y 2) (pow z 2) (pow w 2)
-        |q-scale $ quote
-          defn q-scale (v n)
-            let[] (x y z w) v $ [] (&* n x) (&* n y) (&* n z) (&* n w)
-        |v+ $ quote
-          defn v+ (& xs)
-            foldl xs ([] 0 0 0)
-              fn (acc x) (&v+ acc x)
-        |v- $ quote
-          defn v- (& xs)
-            foldl (rest xs) (first xs)
-              fn (acc x) (&v- acc x)
-        |v-scale $ quote
-          defn v-scale (v n)
-            let[] (x y z w) v $ [] (&* n x) (&* n y) (&* n z)
-              &* n $ either w 0
-      :ns $ quote
-        ns app.math $ :require ("\"three" :as THREE)
+          quaternion.core :refer $ &v+
