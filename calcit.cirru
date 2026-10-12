@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/ |memof/
+      :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -20,31 +20,37 @@
               map-indexed points $ fn (idx p)
                 hud-display (str |p idx) (map p shorten-num)
               group ({})
-                if controls? $ memof1-call comp-axis
-                if controls? $ memof1-call comp-controls
-                memof1-call comp-button
+                if controls? (comp-axis)
+                  group $ {}
+                if controls? (comp-controls)
+                  group $ {}
+                comp-button
                   {} (:size 8)
                     :position $ [] 400 100 0
                     :color $ [] 0.4 0.8 0.5
                   fn (e d!) (d! :toggle-controls nil)
-                if controls? $ group ({}) & $ -> points
-                  map-indexed $ fn (idx point)
-                    group ({})
-                      comp-drag-point
-                        {} (:size 16)
-                          :position $ take point 3
-                        fn (p d!)
-                          if (> idx 0)
-                            d! :move-point $ [] idx $ conj p (last point)
-                      comp-slider
-                        {} (:size 10)
-                          :position $ &v+ point $ [] 24 16 0
-                          :color $ [] 0.3 0.8 0.3
-                        fn (xy d!)
-                          d! :move-point $ [] idx $ update point 3
-                            fn (w)
-                              + w $ * 1 $ first xy
-                  rest
+                if controls?
+                  group ({}) & $ -> points
+                    map-indexed $ fn (idx point)
+                      group ({})
+                        comp-drag-point
+                          {} (:size 16)
+                            :position $ take point 3
+                          fn (p d!)
+                            if (> idx 0)
+                              d! :move-point $ [] idx $ conj p
+                                .unwrap $ .last point
+                            , &unit
+                        comp-slider
+                          {} (:size 10)
+                            :position $ &v+ point $ [] 24 16 0
+                            :color $ [] 0.3 0.8 0.3
+                          fn (xy d!)
+                            d! :move-point $ [] idx $ update point 3
+                              fn (w)
+                                + w $ * 1 $ .unwrap (.first xy)
+                    rest
+                  group $ {}
                 match (count points)
                   4 $ let
                       ps $ fold-line2 level (quaternion.core/quaternion 0 0 0 0)
@@ -96,7 +102,8 @@
                       :vertex-shader $ inline-shader |line.vert
                       :fragment-shader $ inline-shader |line.frag
                       :packed-attrs ps
-                  _ $ do (js/console.log "|unknown points:" points) nil
+                  _ $ do (js/console.log "|unknown points:" points)
+                    group $ {}
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ [] 'app.state/Store
@@ -144,7 +151,6 @@
             app.fractal :refer $ fold-line2 fold-line3 fold-line4 fold-line5
             quaternion.core :refer $ q-inverse
             triadica.hud :refer $ hud-display
-            memof.once :refer $ memof1-call
             triadica.vector :refer $ &v+
             js-ffi.contract :as contract
     'app.config $ %{} 'FileEntry

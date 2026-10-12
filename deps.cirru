@@ -4,4 +4,3 @@
     |Triadica/triadica-space |0.0.37
     |Respo/respo.calcit |0.16.114
     |calcit-lang/quaternion |0.2.11
-    |calcit-lang/memof |0.0.37
