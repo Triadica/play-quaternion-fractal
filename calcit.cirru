@@ -143,14 +143,17 @@
                 or (<= level 0)
                   &< (q-length2 v) minimal-seg
                 []
-                  {} $ :position $ take (&q+ base branch-a) 3
-                  {} $ :position $ take (&q+ base branch-b) 3
-                  {} $ :position $ take (&q+ base v) 3
-                []
+                  wrap-position $ &q+ base branch-a
+                  wrap-position $ &q+ base branch-b
+                  wrap-position $ &q+ base v
+                concat
                   fold-line2 (dec level) base branch-a a b full' minimal-seg
                   fold-line2 (dec level) (&q+ base branch-a) (&q- branch-b branch-a) a b full' minimal-seg
                   fold-line2 (dec level) (&q+ base branch-b) (&q- v branch-b) a b full' minimal-seg
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
+            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
         'fold-line3 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line3 (level base v a b c full' minimal-seg)
             let
@@ -162,16 +165,19 @@
                 or (<= level 0)
                   &< (q-length2 v) minimal-seg
                 []
-                  {} $ :position $ take (&q+ base branch-a) 3
-                  {} $ :position $ take (&q+ base branch-b) 3
-                  {} $ :position $ take (&q+ base branch-c) 3
-                  {} $ :position $ take (&q+ base v) 3
-                []
+                  wrap-position $ &q+ base branch-a
+                  wrap-position $ &q+ base branch-b
+                  wrap-position $ &q+ base branch-c
+                  wrap-position $ &q+ base v
+                concat
                   fold-line3 (dec level) base branch-a a b c full' minimal-seg
                   fold-line3 (dec level) (&q+ base branch-a) (&q- branch-b branch-a) a b c full' minimal-seg
                   fold-line3 (dec level) (&q+ base branch-b) (&q- branch-c branch-b) a b c full' minimal-seg
                   fold-line3 (dec level) (&q+ base branch-c) (&q- v branch-c) a b c full' minimal-seg
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
+            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
         'fold-line4 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line4
             level base v a b c d full' minimal-seg
@@ -190,13 +196,16 @@
                   wrap-position $ &q+ base branch-c
                   wrap-position $ &q+ base branch-d
                   wrap-position $ &q+ base v
-                []
+                concat
                   fold-line4 (dec level) base branch-a a b c d full' minimal-seg
                   fold-line4 (dec level) (&q+ base branch-a) (&q- branch-b branch-a) a b c d full' minimal-seg
                   fold-line4 (dec level) (&q+ base branch-b) (&q- branch-c branch-b) a b c d full' minimal-seg
                   fold-line4 (dec level) (&q+ base branch-c) (&q- branch-d branch-c) a b c d full' minimal-seg
                   fold-line4 (dec level) (&q+ base branch-d) (&q- v branch-d) a b c d full' minimal-seg
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
+            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
         'fold-line5 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line5
             level base v a b c d e full' minimal-seg
@@ -217,7 +226,7 @@
                   wrap-position $ &q+ base branch-d
                   wrap-position $ &q+ base branch-e
                   wrap-position $ &q+ base v
-                []
+                concat
                   fold-line5 (dec level) base branch-a a b c d e full' minimal-seg
                   fold-line5 (dec level) (&q+ base branch-a) (&q- branch-b branch-a) a b c d e full' minimal-seg
                   fold-line5 (dec level) (&q+ base branch-b) (&q- branch-c branch-b) a b c d e full' minimal-seg
@@ -225,13 +234,21 @@
                   fold-line5 (dec level) (&q+ base branch-d) (&q- branch-e branch-d) a b c d e full' minimal-seg
                   fold-line5 (dec level) (&q+ base branch-e) (&q- v branch-e) a b c d e full' minimal-seg
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
+            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
         'wrap-position $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn wrap-position (v4)
-            {} $ :position $ take v4 3
+            match v4 $
+              :quaternion w x y z
+              {} $ :position $ [] x y z
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'quaternion.core/Quaternion
+            :return $ :: 'Map 'Tag $ :: 'List 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.fractal
-          :require $ quaternion.core :refer $ v-scale v+ &v+ &q+ &q- &q* q-inverse q-length2
+          :require $ quaternion.core :refer $ &q+ &q- &q* q-length2
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*store $ %{} 'CodeEntry (:doc |)
