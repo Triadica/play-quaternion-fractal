@@ -124,23 +124,29 @@
                   :color $ [] 0.4 0.8 0.5
                 fn (e d!) (d! :dec-level nil)
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :return $ :: 'Map 'Tag 'Dynamic
         'shorten-num $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn shorten-num (x)
-            js/parseFloat $ .!toFixed x 1
+            contract/expect-number |shorten-num $ js/parseFloat $ .!toFixed x 1
           :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Number)
+            :args $ [] 'Number
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (|twgl.js :as twgl)
             app.config :refer $ inline-shader
             triadica.alias :refer $ object group
-            triadica.math :refer $ &v+
-            triadica.core :refer $ %nested-attribute
             triadica.comp.axis :refer $ comp-axis
             triadica.comp.drag-point :refer $ comp-drag-point comp-slider comp-button
             app.fractal :refer $ fold-line2 fold-line3 fold-line4 fold-line5
             quaternion.core :refer $ q-inverse
             triadica.hud :refer $ hud-display
             memof.once :refer $ memof1-call
+            triadica.vector :refer $ &v+
+            js-ffi.contract :as contract
     'app.config $ %{} 'FileEntry
       :defs $ {} $ 'inline-shader
         %{} 'CodeEntry (:doc |)
