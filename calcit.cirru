@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/
+      :modules $ [] |touch-control/ |respo.calcit/ |triadica-space/ |quaternion/ |js-ffi/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -305,8 +305,10 @@
           :examples $ []
           :schema $ :: 'Ref 'app.state/Store
         'canvas $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def canvas (js/document.querySelector |canvas)
+          :code $ quote $ def canvas
+            .unwrap $ query-selector |canvas
           :examples $ []
+          :schema $ :: 'js-ffi.browser/DomElementHost
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op data)
             when dev? $ js/console.log |Dispatch: op data
@@ -330,31 +332,46 @@
             twgl/setDefaults $ js-object $ :attribPrefix |a_
             inject-hud!
             reset-canvas-size! canvas
-            reset! *gl-context $ .!getContext canvas |webgl $ js-object (:antialias true)
+            let
+                context $ .?!getContext canvas |webgl $ &js-object :antialias true
+              if (js-present? context)
+                reset! *gl-context $ Option :some context
+                raise |WebGL-context-unavailable
             render-app!
             render-control!
             start-control-loop! 10 on-control-event
-            add-watch *store :change $ fn (v _p) (render-app!)
+            add-watch! *store :change $ fn (v _p) (render-app!)
             set! js/window.onresize $ fn (event) (reset-canvas-size! canvas) (render-app!)
             setup-mouse-events! canvas
+            , &unit
           :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
-              do (remove-watch *store :change)
-                add-watch *store :change $ fn (v _p) (render-app!)
+              do (remove-watch! *store :change)
+                add-watch! *store :change $ fn (v _p) (render-app!)
                 replace-control-loop! 10 on-control-event
                 set! js/window.onresize $ fn (event) (reset-canvas-size! canvas) (render-app!)
                 setup-mouse-events! canvas
                 render-app!
                 hud! |ok~ |OK
               hud! |error build-errors
+            , &unit
           :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             load-objects! (comp-container @*store) dispatch!
             paint-canvas!
+            , &unit
           :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require (|./calcit.build-errors :default build-errors) (|bottom-tip :default hud!)
@@ -366,6 +383,7 @@
             triadica.hud :refer $ inject-hud!
             app.comp.container :refer $ comp-container
             app.state :as state
+            js-ffi.browser :refer $ query-selector
     'app.state $ %{} 'FileEntry
       :defs $ {}
         'Store $ %{} 'CodeEntry (:doc |)
