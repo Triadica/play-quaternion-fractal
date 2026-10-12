@@ -45,41 +45,63 @@
                             fn (w)
                               + w $ * 1 $ first xy
                   rest
-                case-default (count points)
-                  do (js/console.log "|unknown points:" points) nil
+                match (count points)
                   4 $ let
-                      ps $ fold-line2 level ([] 0 0 0) (nth points 3) (nth points 1) (nth points 2)
-                        q-inverse $ nth points 3
+                      ps $ fold-line2 level (quaternion.core/quaternion 0 0 0 0)
+                        app.fractal/point-quaternion $ .unwrap $ .get points 3
+                        app.fractal/point-quaternion $ .unwrap $ .get points 1
+                        app.fractal/point-quaternion $ .unwrap $ .get points 2
+                        q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 3)
                         , mini-seg
                     object $ {} (:draw-mode :line-strip)
                       :vertex-shader $ inline-shader |line.vert
                       :fragment-shader $ inline-shader |line.frag
-                      :grouped-attributes ps
+                      :packed-attrs ps
                   5 $ let
-                      ps $ fold-line3 level ([] 0 0 0) (nth points 4) (nth points 1) (nth points 2) (nth points 3)
-                        q-inverse $ nth points 4
+                      ps $ fold-line3 level (quaternion.core/quaternion 0 0 0 0)
+                        app.fractal/point-quaternion $ .unwrap $ .get points 4
+                        app.fractal/point-quaternion $ .unwrap $ .get points 1
+                        app.fractal/point-quaternion $ .unwrap $ .get points 2
+                        app.fractal/point-quaternion $ .unwrap $ .get points 3
+                        q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 4)
                         , mini-seg
                     object $ {} (:draw-mode :line-strip)
                       :vertex-shader $ inline-shader |line.vert
                       :fragment-shader $ inline-shader |line.frag
-                      :grouped-attributes ps
+                      :packed-attrs ps
                   6 $ let
-                      ps $ fold-line4 level ([] 0 0 0) (nth points 5) (nth points 1) (nth points 2) (nth points 3) (nth points 4)
-                        q-inverse $ nth points 5
+                      ps $ fold-line4 level (quaternion.core/quaternion 0 0 0 0)
+                        app.fractal/point-quaternion $ .unwrap $ .get points 5
+                        app.fractal/point-quaternion $ .unwrap $ .get points 1
+                        app.fractal/point-quaternion $ .unwrap $ .get points 2
+                        app.fractal/point-quaternion $ .unwrap $ .get points 3
+                        app.fractal/point-quaternion $ .unwrap $ .get points 4
+                        q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 5)
                         , mini-seg
                     object $ {} (:draw-mode :line-strip)
                       :vertex-shader $ inline-shader |line.vert
                       :fragment-shader $ inline-shader |line.frag
-                      :grouped-attributes ps
+                      :packed-attrs ps
                   7 $ let
-                      ps $ fold-line5 level ([] 0 0 0) (nth points 6) (nth points 1) (nth points 2) (nth points 3) (nth points 4) (nth points 5)
-                        q-inverse $ nth points 6
+                      ps $ fold-line5 level (quaternion.core/quaternion 0 0 0 0)
+                        app.fractal/point-quaternion $ .unwrap $ .get points 6
+                        app.fractal/point-quaternion $ .unwrap $ .get points 1
+                        app.fractal/point-quaternion $ .unwrap $ .get points 2
+                        app.fractal/point-quaternion $ .unwrap $ .get points 3
+                        app.fractal/point-quaternion $ .unwrap $ .get points 4
+                        app.fractal/point-quaternion $ .unwrap $ .get points 5
+                        q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 6)
                         , mini-seg
                     object $ {} (:draw-mode :line-strip)
                       :vertex-shader $ inline-shader |line.vert
                       :fragment-shader $ inline-shader |line.frag
-                      :grouped-attributes ps
+                      :packed-attrs ps
+                  _ $ do (js/console.log "|unknown points:" points) nil
           :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'app.state/Store
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'comp-controls $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-controls ()
             group ({})
@@ -126,8 +148,8 @@
             read-file $ str |shaders/ file
           :examples $ []
           :schema $ :: 'Macro $ {}
-            :capabilities $ #{}
-            :expansion $ :: 'Expr 'Dynamic
+            :capabilities $ #{} :fs-read :log
+            :expansion $ :: 'Expr 'String
             :required $ [] 'Syntax
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
@@ -237,6 +259,16 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
             :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
+        'point-quaternion $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn point-quaternion (point)
+            quaternion.core/quaternion
+              .unwrap $ .get point 3
+              .unwrap $ .get point 0
+              .unwrap $ .get point 1
+              .unwrap $ .get point 2
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'quaternion.core/Quaternion)
+            :args $ [] $ :: 'List 'Number
         'wrap-position $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn wrap-position (v4)
             match v4 $
@@ -252,13 +284,14 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *store
-            {}
+          :code $ quote $ defref *store
+            %{} state/Store
               :states $ {}
               :points $ [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
               :level 4
               :controls? true
           :examples $ []
+          :schema $ :: 'Ref 'app.state/Store
         'canvas $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def canvas (js/document.querySelector |canvas)
           :examples $ []
@@ -267,26 +300,18 @@
             when dev? $ js/console.log |Dispatch: op data
             let
                 store $ deref *store
-                next $ case-default op
-                  do (js/console.warn "|unknown op" op) store
-                  :add-point $ update store :points $ fn (xs)
-                    conj xs $ &v+ (last xs) ([] 0 100 0 0)
-                  :remove-point $ update store :points $ fn (xs)
-                    if
-                      <= (count xs) 1
-                      , xs $ butlast xs
-                  :move-point $ update store :points $ fn (xs)
-                    let
-                        idx $ nth data 0
-                        p $ nth data 1
-                      assoc xs idx p
-                  :inc-level $ update store :level $ fn (l)
-                    if (< l 9) (inc l) l
-                  :dec-level $ update store :level $ fn (l)
-                    if (> l 3) (- l 2) l
-                  :toggle-controls $ update store :controls? not
-              reset! *store next
+              reset! *store $ if (tag? op)
+                do
+                  when
+                    not $ .includes? (#{} :add-point :remove-point :move-point :inc-level :dec-level :toggle-controls) op
+                    js/console.warn |unknown-op op
+                  state/update-store store op data
+                do (js/console.warn |unknown-op op) store
+              , &unit
           :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             if dev? $ load-console-formatter!
@@ -328,4 +353,54 @@
             triadica.global :refer $ *gl-context
             triadica.hud :refer $ inject-hud!
             app.comp.container :refer $ comp-container
-            quaternion.core :refer $ &v+
+            app.state :as state
+    'app.state $ %{} 'FileEntry
+      :defs $ {}
+        'Store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Store
+            :states $ :: 'Map 'Tag 'Unit
+            :points $ :: 'List $ :: 'List 'Number
+            :level 'Number
+            :controls? 'Bool
+          :examples $ []
+          :schema $ :: 'StructDef
+        'update-store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn update-store (store op data)
+            match op
+              :add-point $ assoc store :points $ conj (:points store)
+                map-indexed
+                  .unwrap $ .last $ :points store
+                  fn (idx x)
+                    if (= idx 1) (+ x 100) x
+              :remove-point $ assoc store :points $ let
+                  xs $ :points store
+                if
+                  <= (count xs) 1
+                  , xs $ butlast xs
+              :move-point $ if (list? data)
+                let
+                    idx $ .unwrap $ .get data 0
+                    raw-point $ .unwrap $ .get data 1
+                  if (number? idx)
+                    if (list? raw-point)
+                      assoc store :points $ assoc (:points store) idx $ map raw-point
+                        fn (x)
+                          if (number? x) x $ raise |expected-number-in-point
+                      raise |expected-point-list
+                    raise |expected-point-index
+                raise |expected-move-point-payload
+              :inc-level $ assoc store :level $ if
+                < (:level store) 9
+                inc $ :level store
+                :level store
+              :dec-level $ assoc store :level $ if
+                > (:level store) 3
+                - (:level store) 2
+                :level store
+              :toggle-controls $ assoc store :controls? $ not (:controls? store)
+              _ store
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.state/Store)
+            :args $ [] 'app.state/Store 'Tag 'Dynamic
+      :ns $ %{} 'NsEntry (:doc |)
+        :code $ quote $ ns app.state
