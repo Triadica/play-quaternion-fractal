@@ -297,11 +297,9 @@
       :defs $ {}
         '*store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *store
-            %{} state/Store
-              :states $ {}
-              :points $ [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
-              :level 4
-              :controls? true
+            state/Store :states ({}) :points
+              [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
+              , :level 4 :controls? true
           :examples $ []
           :schema $ :: 'Ref 'app.state/Store
         'canvas $ %{} 'CodeEntry (:doc |)
