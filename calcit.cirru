@@ -17,8 +17,9 @@
                 level $ :level store
                 controls? $ :controls? store
                 mini-seg 4
-              map-indexed points $ fn (idx p)
-                hud-display (str |p idx) (map p shorten-num)
+              map-indexed points $ fn (idx point)
+                let[] (x y z w) point $ hud-display (str |p idx)
+                  map ([] x y z w) shorten-num
               group ({})
                 if controls? (comp-axis)
                   group $ {}
@@ -28,30 +29,30 @@
                   {} (:size 8)
                     :position $ [] 400 100 0
                     :color $ [] 0.4 0.8 0.5
-                  fn (e d!) (d! :toggle-controls nil)
+                  fn (e d!) (d! :toggle-controls &unit)
                 if controls?
                   group ({}) & $ -> points
                     map-indexed $ fn (idx point)
-                      group ({})
+                      let[] (x y z w) point $ group ({})
                         comp-drag-point
                           {} (:size 16)
-                            :position $ take point 3
-                          fn (p d!)
+                            :position $ [] x y z
+                          fn (position d!)
                             if (> idx 0)
-                              d! :move-point $ [] idx $ conj p
-                                .unwrap $ .last point
+                              let[] (next-x next-y next-z)
+                                decode-map-as position $ Tuple Number Number Number
+                                d! :move-point $ [] idx $ [] next-x next-y next-z w
                             , &unit
                         comp-slider
                           {} (:size 10)
-                            :position $ &v+ point $ [] 24 16 0
+                            :position $ &v+ ([] x y z) ([] 24 16 0)
                             :color $ [] 0.3 0.8 0.3
                           fn (xy d!)
-                            d! :move-point $ [] idx $ update point 3
-                              fn (w)
-                                + w $ * 1 $ .unwrap (.first xy)
+                            d! :move-point $ [] idx $ [] x y z
+                              + w $ .unwrap $ .first xy
                     rest
                   group $ {}
-                match (count points)
+                match (.len points)
                   4 $ let
                       ps $ fold-line2 level (quaternion.core/quaternion 0 0 0 0)
                         app.fractal/point-quaternion $ .unwrap $ .get points 3
@@ -105,42 +106,38 @@
                   _ $ do (js/console.log "|unknown points:" points)
                     group $ {}
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'app.state/Store
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn app.state/Store
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'comp-controls $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-controls ()
             group ({})
               comp-button
                 {} (:size 12)
                   :position $ [] 300 200 0
-                fn (e d!) (d! :add-point nil)
+                fn (e d!) (d! :add-point &unit)
               comp-button
                 {} (:size 12)
                   :position $ [] 300 160 0
-                fn (e d!) (d! :remove-point nil)
+                fn (e d!) (d! :remove-point &unit)
               comp-button
                 {} (:size 12)
                   :position $ [] 340 180 0
                   :color $ [] 0.4 0.8 0.5
-                fn (e d!) (d! :inc-level nil)
+                fn (e d!) (d! :inc-level &unit)
               comp-button
                 {} (:size 12)
                   :position $ [] 340 140 0
                   :color $ [] 0.4 0.8 0.5
-                fn (e d!) (d! :dec-level nil)
+                fn (e d!) (d! :dec-level &unit)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ []
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn
+            -> $ Map Tag Dynamic
         'shorten-num $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn shorten-num (x)
             contract/expect-number |shorten-num $ js/parseFloat $ .!toFixed x 1
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Number)
-            :args $ [] 'Number
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Number (-> Number) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (|twgl.js :as twgl)
@@ -159,10 +156,9 @@
           :code $ quote $ defmacro inline-shader (file) (println "|inline shader file:" file)
             read-file $ str |shaders/ file
           :examples $ []
-          :schema $ :: 'Macro $ {}
-            :capabilities $ #{} :fs-read :log
-            :expansion $ :: 'Expr 'String
-            :required $ [] 'Syntax
+          :schema $ quote $ Macro Syntax
+            -> $ Expr String
+            :capabilities :fs-read :log
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
     'app.fractal $ %{} 'FileEntry
@@ -185,9 +181,8 @@
                   fold-line2 (dec level) (&q+ base branch-a) (&q- branch-b branch-a) a b full' minimal-seg
                   fold-line2 (dec level) (&q+ base branch-b) (&q- v branch-b) a b full' minimal-seg
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
-            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
+          :schema $ quote $ Fn Number quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion Number
+            -> $ List $ Map Tag (List Number)
         'fold-line3 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line3 (level base v a b c full' minimal-seg)
             let
@@ -209,9 +204,8 @@
                   fold-line3 (dec level) (&q+ base branch-b) (&q- branch-c branch-b) a b c full' minimal-seg
                   fold-line3 (dec level) (&q+ base branch-c) (&q- v branch-c) a b c full' minimal-seg
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
-            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
+          :schema $ quote $ Fn Number quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion Number
+            -> $ List $ Map Tag (List Number)
         'fold-line4 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line4
             level base v a b c d full' minimal-seg
@@ -237,9 +231,8 @@
                   fold-line4 (dec level) (&q+ base branch-c) (&q- branch-d branch-c) a b c d full' minimal-seg
                   fold-line4 (dec level) (&q+ base branch-d) (&q- v branch-d) a b c d full' minimal-seg
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
-            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
+          :schema $ quote $ Fn Number quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion Number
+            -> $ List $ Map Tag (List Number)
         'fold-line5 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn fold-line5
             level base v a b c d e full' minimal-seg
@@ -268,28 +261,21 @@
                   fold-line5 (dec level) (&q+ base branch-d) (&q- branch-e branch-d) a b c d e full' minimal-seg
                   fold-line5 (dec level) (&q+ base branch-e) (&q- v branch-e) a b c d e full' minimal-seg
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Number 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'quaternion.core/Quaternion 'Number
-            :return $ :: 'List $ :: 'Map 'Tag (:: 'List 'Number)
+          :schema $ quote $ Fn Number quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion quaternion.core/Quaternion Number
+            -> $ List $ Map Tag (List Number)
         'point-quaternion $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn point-quaternion (point)
-            quaternion.core/quaternion
-              .unwrap $ .get point 3
-              .unwrap $ .get point 0
-              .unwrap $ .get point 1
-              .unwrap $ .get point 2
+            let[] (x y z w) point $ quaternion.core/quaternion w x y z
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'quaternion.core/Quaternion)
-            :args $ [] $ :: 'List 'Number
+          :schema $ quote $ Fn (Tuple Number Number Number Number) (-> quaternion.core/Quaternion)
         'wrap-position $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn wrap-position (v4)
             match v4 $
               :quaternion w x y z
               {} $ :position $ [] x y z
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'quaternion.core/Quaternion
-            :return $ :: 'Map 'Tag $ :: 'List 'Number
+          :schema $ quote $ Fn quaternion.core/Quaternion
+            -> $ Map Tag $ List Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.fractal
           :require $ quaternion.core :refer $ &q+ &q- &q* q-length2
@@ -301,29 +287,22 @@
               [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
               , :level 4 :controls? true
           :examples $ []
-          :schema $ :: 'Ref 'app.state/Store
+          :schema $ quote $ Ref app.state/Store
         'canvas $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def canvas
             .unwrap $ query-selector |canvas
           :examples $ []
-          :schema $ :: 'js-ffi.browser/DomElementHost
+          :schema $ quote js-ffi.browser/DomElementHost
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op data)
             when dev? $ js/console.log |Dispatch: op data
-            let
-                store $ deref *store
-              reset! *store $ if (tag? op)
-                do
-                  when
-                    not $ .includes? (#{} :add-point :remove-point :move-point :inc-level :dec-level :toggle-controls) op
-                    js/console.warn |unknown-op op
-                  state/update-store store op data
-                do (js/console.warn |unknown-op op) store
-              , &unit
+            match (state/decode-op op data)
+              (:some action)
+                reset! *store $ state/update-store @*store action
+              (:none) (js/console.warn |unknown-op op)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Operation Payload (-> Unit) (:generics Operation Payload) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             if dev? $ load-console-formatter!
@@ -343,9 +322,7 @@
             setup-mouse-events! canvas
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
@@ -359,17 +336,14 @@
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             load-objects! (comp-container @*store) dispatch!
             paint-canvas!
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require (|./calcit.build-errors :default build-errors) (|bottom-tip :default hud!)
@@ -384,51 +358,74 @@
             js-ffi.browser :refer $ query-selector
     'app.state $ %{} 'FileEntry
       :defs $ {}
+        'Op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum Op (:add-point) (:remove-point)
+            :move-point Number $ Tuple Number Number Number Number
+            :inc-level
+            :dec-level
+            :toggle-controls
+          :examples $ []
+          :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
-            :states $ :: 'Map 'Tag 'Unit
-            :points $ :: 'List $ :: 'List 'Number
-            :level 'Number
-            :controls? 'Bool
+            :states $ Map Tag Unit
+            :points $ List $ Tuple Number Number Number Number
+            :level Number
+            :controls? Bool
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ quote StructDef
+        'decode-op $ %{} 'CodeEntry
+          :doc "|Translate the renderer's raw callback into a typed application action."
+          :code $ quote $ defn decode-op (raw-op data)
+            match (try-decode-map-as raw-op 'Tag)
+              (:ok tag)
+                match tag
+                  :add-point $ Option :some $ Op :add-point
+                  :remove-point $ Option :some $ Op :remove-point
+                  :move-point $ let[] (idx point)
+                    decode-map-as data $ Tuple Number $ Tuple Number Number Number Number
+                    Option :some $ Op :move-point idx point
+                  :inc-level $ Option :some $ Op :inc-level
+                  :dec-level $ Option :some $ Op :dec-level
+                  :toggle-controls $ Option :some $ Op :toggle-controls
+                  _ $ Option :none
+              (:err _) (Option :none)
+          :examples $ []
+          :schema $ quote $ Fn Operation Payload
+            -> $ Option app.state/Op
+            :generics Operation Payload
         'update-store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn update-store (store op data)
+          :code $ quote $ defn update-store (store op)
             match op
-              :add-point $ assoc store :points $ conj (:points store)
-                map-indexed
-                  .unwrap $ .last $ :points store
-                  fn (idx x)
-                    if (= idx 1) (+ x 100) x
-              :remove-point $ assoc store :points $ let
-                  xs $ :points store
-                if
-                  <= (count xs) 1
-                  , xs $ butlast xs
-              :move-point $ if (list? data)
+              (:add-point)
                 let
-                    idx $ .unwrap $ .get data 0
-                    raw-point $ .unwrap $ .get data 1
-                  if (number? idx)
-                    if (list? raw-point)
-                      assoc store :points $ assoc (:points store) idx $ map raw-point
-                        fn (x)
-                          if (number? x) x $ raise |expected-number-in-point
-                      raise |expected-point-list
-                    raise |expected-point-index
-                raise |expected-move-point-payload
-              :inc-level $ assoc store :level $ if
-                < (:level store) 9
-                inc $ :level store
-                :level store
-              :dec-level $ assoc store :level $ if
-                > (:level store) 3
-                - (:level store) 2
-                :level store
-              :toggle-controls $ assoc store :controls? $ not (:controls? store)
-              _ store
+                    points $ :points store
+                  let[] (x y z w)
+                    .unwrap $ .last points
+                    assoc store :points $ conj points $ assert-type
+                      [] x (+ y 100) z w
+                      Tuple Number Number Number Number
+              (:remove-point)
+                assoc store :points $ let
+                    xs $ :points store
+                  if
+                    <= (.len xs) 1
+                    , xs $ butlast xs
+              (:move-point idx point)
+                assoc store :points $ assoc (:points store) idx point
+              (:inc-level)
+                assoc store :level $ if
+                  < (:level store) 9
+                  inc $ :level store
+                  :level store
+              (:dec-level)
+                assoc store :level $ if
+                  > (:level store) 3
+                  - (:level store) 2
+                  :level store
+              (:toggle-controls)
+                assoc store :controls? $ not $ :controls? store
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'app.state/Store)
-            :args $ [] 'app.state/Store 'Tag 'Dynamic
+          :schema $ quote $ Fn app.state/Store app.state/Op (-> app.state/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.state
