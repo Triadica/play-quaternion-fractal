@@ -60,10 +60,7 @@
                         app.fractal/point-quaternion $ .unwrap $ .get points 2
                         q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 3)
                         , mini-seg
-                    object $ {} (:draw-mode :line-strip)
-                      :vertex-shader $ inline-shader |line.vert
-                      :fragment-shader $ inline-shader |line.frag
-                      :packed-attrs ps
+                    object $ {} (:draw-mode :line-strip) (:vertex-shader line-vertex-shader) (:fragment-shader line-fragment-shader) (:packed-attrs ps)
                   5 $ let
                       ps $ fold-line3 level (quaternion.core/quaternion 0 0 0 0)
                         app.fractal/point-quaternion $ .unwrap $ .get points 4
@@ -72,10 +69,7 @@
                         app.fractal/point-quaternion $ .unwrap $ .get points 3
                         q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 4)
                         , mini-seg
-                    object $ {} (:draw-mode :line-strip)
-                      :vertex-shader $ inline-shader |line.vert
-                      :fragment-shader $ inline-shader |line.frag
-                      :packed-attrs ps
+                    object $ {} (:draw-mode :line-strip) (:vertex-shader line-vertex-shader) (:fragment-shader line-fragment-shader) (:packed-attrs ps)
                   6 $ let
                       ps $ fold-line4 level (quaternion.core/quaternion 0 0 0 0)
                         app.fractal/point-quaternion $ .unwrap $ .get points 5
@@ -85,10 +79,7 @@
                         app.fractal/point-quaternion $ .unwrap $ .get points 4
                         q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 5)
                         , mini-seg
-                    object $ {} (:draw-mode :line-strip)
-                      :vertex-shader $ inline-shader |line.vert
-                      :fragment-shader $ inline-shader |line.frag
-                      :packed-attrs ps
+                    object $ {} (:draw-mode :line-strip) (:vertex-shader line-vertex-shader) (:fragment-shader line-fragment-shader) (:packed-attrs ps)
                   7 $ let
                       ps $ fold-line5 level (quaternion.core/quaternion 0 0 0 0)
                         app.fractal/point-quaternion $ .unwrap $ .get points 6
@@ -99,10 +90,7 @@
                         app.fractal/point-quaternion $ .unwrap $ .get points 5
                         q-inverse $ app.fractal/point-quaternion $ .unwrap (.get points 6)
                         , mini-seg
-                    object $ {} (:draw-mode :line-strip)
-                      :vertex-shader $ inline-shader |line.vert
-                      :fragment-shader $ inline-shader |line.frag
-                      :packed-attrs ps
+                    object $ {} (:draw-mode :line-strip) (:vertex-shader line-vertex-shader) (:fragment-shader line-fragment-shader) (:packed-attrs ps)
                   _ $ do (js/console.log "|unknown points:" points)
                     group $ {}
           :examples $ []
@@ -133,6 +121,14 @@
           :examples $ []
           :schema $ quote $ Fn
             -> $ Map Tag Dynamic
+        'line-fragment-shader $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ def line-fragment-shader (inline-shader |line.frag)
+          :examples $ []
+          :schema $ quote String
+        'line-vertex-shader $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ def line-vertex-shader (inline-shader |line.vert)
+          :examples $ []
+          :schema $ quote String
         'shorten-num $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn shorten-num (x)
             contract/expect-number |shorten-num $ js/parseFloat $ .!toFixed x 1
