@@ -29,7 +29,8 @@
                   {} (:size 8)
                     :position $ [] 400 100 0
                     :color $ [] 0.4 0.8 0.5
-                  fn (e d!) (d! :toggle-controls &unit)
+                  fn (e d!)
+                    d! :op $ app.state/Op :toggle-controls
                 if controls?
                   group ({}) & $ -> points
                     map-indexed $ fn (idx point)
@@ -41,15 +42,16 @@
                             if (> idx 0)
                               let[] (next-x next-y next-z)
                                 decode-map-as position $ Tuple Number Number Number
-                                d! :move-point $ [] idx $ [] next-x next-y next-z w
+                                d! :op $ app.state/Op :move-point idx $ assert-type ([] next-x next-y next-z w) (Tuple Number Number Number Number)
                             , &unit
                         comp-slider
                           {} (:size 10)
                             :position $ &v+ ([] x y z) ([] 24 16 0)
                             :color $ [] 0.3 0.8 0.3
                           fn (xy d!)
-                            d! :move-point $ [] idx $ [] x y z
-                              + w $ .unwrap $ .first xy
+                            d! :op $ app.state/Op :move-point idx $ assert-type
+                              [] x y z $ + w $ .unwrap (.first xy)
+                              Tuple Number Number Number Number
                     rest
                   group $ {}
                 match (.len points)
@@ -103,21 +105,25 @@
               comp-button
                 {} (:size 12)
                   :position $ [] 300 200 0
-                fn (e d!) (d! :add-point &unit)
+                fn (e d!)
+                  d! :op $ app.state/Op :add-point
               comp-button
                 {} (:size 12)
                   :position $ [] 300 160 0
-                fn (e d!) (d! :remove-point &unit)
+                fn (e d!)
+                  d! :op $ app.state/Op :remove-point
               comp-button
                 {} (:size 12)
                   :position $ [] 340 180 0
                   :color $ [] 0.4 0.8 0.5
-                fn (e d!) (d! :inc-level &unit)
+                fn (e d!)
+                  d! :op $ app.state/Op :inc-level
               comp-button
                 {} (:size 12)
                   :position $ [] 340 140 0
                   :color $ [] 0.4 0.8 0.5
-                fn (e d!) (d! :dec-level &unit)
+                fn (e d!)
+                  d! :op $ app.state/Op :dec-level
           :examples $ []
           :schema $ quote $ Fn
             -> $ Map Tag Dynamic
@@ -283,18 +289,23 @@
               [] ([] 0 0 0 0) ([] 40 100 0 0) ([] 40 200 0 0) ([] 0 300 40 0) ([] 0 400 40 0) ([] 0 500 0 0)
               , :level 4 :controls? true
           :examples $ []
-          :schema $ quote $ Ref app.state/Store
+          :schema $ quote $ Ref state/Store
         'canvas $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def canvas
             .unwrap $ query-selector |canvas
           :examples $ []
           :schema $ quote js-ffi.browser/DomElementHost
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op data)
+          :code $ quote $ defn dispatch! (action)
+            reset! *store $ state/update-store @*store action
+            , &unit
+          :examples $ []
+          :schema $ quote $ Fn state/Op (-> Unit)
+        'dispatch-render! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn dispatch-render! (op data)
             when dev? $ js/console.log |Dispatch: op data
             match (state/decode-op op data)
-              (:some action)
-                reset! *store $ state/update-store @*store action
+              (:some action) (dispatch! action)
               (:none) (js/console.warn |unknown-op op)
             , &unit
           :examples $ []
@@ -308,7 +319,7 @@
             let
                 context $ .?!getContext canvas |webgl $ &js-object :antialias true
               if (js-present? context)
-                reset! *gl-context $ Option :some context
+                reset! *gl-context $ Some context
                 raise |WebGL-context-unavailable
             render-app!
             render-control!
@@ -335,7 +346,7 @@
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            load-objects! (comp-container @*store) dispatch!
+            load-objects! (comp-container @*store) dispatch-render!
             paint-canvas!
             , &unit
           :examples $ []
@@ -376,19 +387,20 @@
             match (try-decode-map-as raw-op 'Tag)
               (:ok tag)
                 match tag
-                  :add-point $ Option :some $ Op :add-point
-                  :remove-point $ Option :some $ Op :remove-point
+                  :op $ Some $ decode-map-as data Op
+                  :add-point $ Some $ Op :add-point
+                  :remove-point $ Some $ Op :remove-point
                   :move-point $ let[] (idx point)
                     decode-map-as data $ Tuple Number $ Tuple Number Number Number Number
-                    Option :some $ Op :move-point idx point
-                  :inc-level $ Option :some $ Op :inc-level
-                  :dec-level $ Option :some $ Op :dec-level
-                  :toggle-controls $ Option :some $ Op :toggle-controls
-                  _ $ Option :none
-              (:err _) (Option :none)
+                    Some $ Op :move-point idx point
+                  :inc-level $ Some $ Op :inc-level
+                  :dec-level $ Some $ Op :dec-level
+                  :toggle-controls $ Some $ Op :toggle-controls
+                  _ None
+              (:err _) None
           :examples $ []
           :schema $ quote $ Fn Operation Payload
-            -> $ Option app.state/Op
+            -> $ Option Op
             :generics Operation Payload
         'update-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn update-store (store op)
@@ -422,6 +434,6 @@
               (:toggle-controls)
                 assoc store :controls? $ not $ :controls? store
           :examples $ []
-          :schema $ quote $ Fn app.state/Store app.state/Op (-> app.state/Store)
+          :schema $ quote $ Fn Store Op (-> Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.state

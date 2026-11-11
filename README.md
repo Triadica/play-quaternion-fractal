@@ -8,9 +8,9 @@ based on previous work on https://github.com/Quatrefoil-GL/play-ruled-surface .
 
 https://github.com/Triadica/triadica-workflow
 
-### Calcit 0.40.0 使用说明
+### Calcit 0.41.0 使用说明
 
-配套使用正式 Calcit 和 `@calcit/procs` 0.40.0，以及 Space 0.0.49、
+配套使用正式 Calcit 和 `@calcit/procs` 0.41.0，以及 Space 0.0.49、
 Respo 0.19.5、Touch Control 0.0.39、Quaternion 0.2.23、JS FFI 0.2.13。
 重装依赖、重新生成 JS 并刷新旧开发页面。分形算法、初始参数和控制方式沿用原版。
 
@@ -32,7 +32,7 @@ strict、5个公开namespace检查与旧调用/动态方法零门槛，不增加
 
 相对旧 Space 0.0.40，此升级继承已发布 0.0.42 的下一帧绘制/帧前请求合并语义：paint-canvas! 返回 Unit，不再保证调用栈内同步绘制完成。默认 glow 保留，项目本身不重新实现帧边界。
 
-Use formal Calcit 0.40.0, Node.js 24 and Yarn 4.18.0. `calcit.cirru` is the source
+Use formal Calcit 0.41.0, Node.js 24 and Yarn 4.18.0. `calcit.cirru` is the source
 Snapshot; `deps.cirru` pins the formal Calcit module releases.
 
 ```sh
