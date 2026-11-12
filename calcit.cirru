@@ -300,7 +300,7 @@
             reset! *store $ state/update-store @*store action
             , &unit
           :examples $ []
-          :schema $ quote $ Fn state/Op (-> Unit)
+          :schema $ quote $ Fn state/Op (-> Unit) (:features :state)
         'dispatch-render! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-render! (op data)
             when dev? $ js/console.log |Dispatch: op data
@@ -309,7 +309,7 @@
               (:none) (js/console.warn |unknown-op op)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Operation Payload (-> Unit) (:generics Operation Payload) (:features :js-ffi)
+          :schema $ quote $ Fn Operation Payload (-> Unit) (:generics Operation Payload) (:features :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             if dev? $ load-console-formatter!
@@ -329,7 +329,7 @@
             setup-mouse-events! canvas
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
@@ -343,14 +343,14 @@
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             load-objects! (comp-container @*store) dispatch-render!
             paint-canvas!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require (|./calcit.build-errors :default build-errors) (|bottom-tip :default hud!)
