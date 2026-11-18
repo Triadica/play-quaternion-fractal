@@ -98,7 +98,7 @@
           :examples $ []
           :schema $ quote $ Fn app.state/Store
             -> $ Map Tag Dynamic
-            :features :js-ffi
+            :features :io :js-ffi :state
         'comp-controls $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-controls ()
             group ({})
@@ -329,7 +329,7 @@
             setup-mouse-events! canvas
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
@@ -343,14 +343,14 @@
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             load-objects! (comp-container @*store) dispatch-render!
             paint-canvas!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :state)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require (|./calcit.build-errors :default build-errors) (|bottom-tip :default hud!)
