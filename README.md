@@ -10,8 +10,8 @@ https://github.com/Triadica/triadica-workflow
 
 ### Calcit 0.44.0 使用说明
 
-配套使用正式 Calcit 和 `@calcit/procs` 0.44.0，以及 Space 0.0.52、
-Respo 0.19.11、Touch Control 0.0.41、Quaternion 0.2.25、JS FFI 0.2.18。
+配套使用正式 Calcit 和 `@calcit/procs` 0.44.0，以及 Space 0.0.53、
+Respo 0.19.13、Touch Control 0.0.43、Quaternion 0.2.26、JS FFI 0.2.19。
 重装依赖、重新生成 JS 并刷新旧开发页面。分形算法、初始参数和控制方式沿用原版。
 
 状态中的每个点为四个数值。移动操作会在写入前校验下标和四坐标载荷。
