@@ -8,15 +8,15 @@ based on previous work on https://github.com/Quatrefoil-GL/play-ruled-surface .
 
 https://github.com/Triadica/triadica-workflow
 
-### Calcit 0.44.0 使用说明
+### Calcit 0.45.1 使用说明
 
-配套使用正式 Calcit 和 `@calcit/procs` 0.44.0，以及 Space 0.0.53、
-Respo 0.19.13、Touch Control 0.0.43、Quaternion 0.2.26、JS FFI 0.2.19。
+配套使用正式 Calcit 和 `@calcit/procs` 0.45.1，以及 Space 0.0.55、
+Respo 0.19.18、Touch Control 0.0.45、Quaternion 0.2.27、JS FFI 0.2.24。
 重装依赖、重新生成 JS 并刷新旧开发页面。分形算法、初始参数和控制方式沿用原版。
 
 状态中的每个点为四个数值。移动操作会在写入前校验下标和四坐标载荷。
 渲染器仍可发送原 Tag 事件，进入更新函数之前会转成具名 `Op`。
-四个点数分支共用类型为 `String` 的顶点和片元着色器源码。
+四个点数分支共用类型为 `String` 的顶点和片元着色器源码。 本次 0.45.1 升级通过 214 个定义的 strict 与构建；项目无附带测试，浏览器交互尚未复验。
 
 ### 历史：Calcit 0.30.1
 
